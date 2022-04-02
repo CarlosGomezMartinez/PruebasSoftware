@@ -1,26 +1,13 @@
-version: 2.1
+version: 2.0
 
-orbs:
-  heroku: circleci/heroku@0.0.10 # Invoke the Heroku orb
-
-workflows:
-  heroku_deploy:
-    jobs:
-      - build
-      - heroku/deploy-via-git: # Use the pre-configured job, deploy-via-git
-          requires:
-            - build
-          filters:
-            branches:
-              only: sequential-branch-filter
 jobs:
   build:
     docker:
-      - image: cimg/ruby:2.4-node
+      - image: cimg/ruby:2.4-node # primary container - where job steps are run
         auth:
           username: mydockerhub-user
           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
-      - image: cimg/postgres:9.6
+      - image: cimg/postgres:9.6 # services container
         auth:
           username: mydockerhub-user
           password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
@@ -28,9 +15,42 @@ jobs:
     steps:
       - checkout
       # Bundle install dependencies
-      - run: bundle config
+      - run: bundle install --path vendor/bundle
+
       # Database setup
       - run: bundle exec rake db:create db:schema:load
+
       - run:
           name: Run tests
           command: rake
+
+  deploy:
+    machine:
+        enabled: true
+    working_directory: ~/circleci-demo-workflows
+    environment:
+      HEROKU_APP: "sleepy-refuge-55486" # define env var $HEROKU_APP
+    steps:
+      - checkout
+      - run:
+          name: Setup Heroku
+          command: bash .circleci/setup-heroku.sh # run a script to set up Heroku
+
+      - run:
+          command: |
+            git push heroku sequential-branch-filter:main
+            heroku run rake db:migrate
+            sleep 5 # sleep for 5 seconds to wait for dynos
+            heroku restart
+
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: sequential-branch-filter
