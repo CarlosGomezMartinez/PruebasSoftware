@@ -28,7 +28,7 @@ jobs:
     steps:
       - checkout
       # Bundle install dependencies
-      - run: bundle install --path vendor/bundle
+      - run: bbundle config
       # Database setup
       - run: bundle exec rake db:create db:schema:load
       - run:
