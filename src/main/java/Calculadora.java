@@ -10,11 +10,8 @@ public class Calculadora {
     }
 
     public static double Sumar (double a, double b) {
-        double c;
 
-        c = a + b;
-
-        return c;
+        return a + b;
     }
 
     public static double Restar (double a, double b) {
