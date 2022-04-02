@@ -15,7 +15,7 @@ jobs:
     steps:
       - checkout
       # Bundle install dependencies
-      - run: bundle install --path vendor/bundle
+      - run: bundle install bundle config set path 'vendor/bundle'
 
       # Database setup
       - run: bundle exec rake db:create db:schema:load
